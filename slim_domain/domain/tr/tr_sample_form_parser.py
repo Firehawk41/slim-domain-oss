@@ -78,7 +78,7 @@ class TRSampleFormParser:
         # fuzzy text search, just the same exact lookup. This is how new
         # analyses got requested without a Testing Request template
         # revision (real example: "Acetate & Formate" typed in that column
-        # on a Folder 048 Water form, with no structured dropdown
+        # on a Folder b65a8 Water form, with no structured dropdown
         # selection for it anywhere).
         scan_cols = list(range(start_col, sample_range.last_col + 1))
         notes_col = _notes_col(request_type)

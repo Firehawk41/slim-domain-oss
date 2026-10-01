@@ -39,7 +39,7 @@ from slim_domain.domain.tr.tr_submission import SENTINEL_DATE
 
 _STUB_CUSTOMER = Customer(
     id=1,
-    name="Customer 130",
+    name="Customer ea6f9",
     street_address="123 Main St",
     city="Springfield",
     state="IL",
@@ -133,7 +133,7 @@ def _make_chemical_ws() -> Any:
     # from the workbook *filename* which is passed separately to the parser.
 
     ws["D3"] = "Chemical Testing Request Form"
-    ws["C10"] = "Customer 130"
+    ws["C10"] = "Customer ea6f9"
     ws["C11"] = "123 Main St"
     ws["C12"] = ""
     ws["I4"] = date(2026, 1, 15)
@@ -413,7 +413,7 @@ def test_sample_parser_water_resolves_analysis_from_notes_column(
 ) -> None:
     """Confirmed real (2026-09-23, direct user correction): the legacy
     macro scanned "Additional Requests or Notes" for a form-name match
-    exactly like any other column -- e.g. a real Folder 048 Water form
+    exactly like any other column -- e.g. a real Folder b65a8 Water form
     requested "Acetate & Formate" only in this free-text column, with no
     structured dropdown selection for it anywhere. Water's notes column
     (17) sits past this fixture's last_col (14, "Processing Time"), so
@@ -515,6 +515,6 @@ def test_submission_parser_form_customer_fields(
 ) -> None:
     ws = _make_chemical_ws()
     sub = submission_parser.build_from_worksheet(ws, download_date=datetime.now(), filename=_CHEMICAL_FILENAME)
-    assert sub.form_customer_name == "Customer 130"
+    assert sub.form_customer_name == "Customer ea6f9"
     assert sub.form_customer_address == "123 Main St"
     assert sub.form_customer_address_2 == ""

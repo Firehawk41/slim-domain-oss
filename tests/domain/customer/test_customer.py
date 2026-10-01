@@ -16,7 +16,7 @@ def session() -> Session:
             [
                 _CustomerRow(
                     id=1,
-                    customer_name="Customer 130",
+                    customer_name="Customer ea6f9",
                     street_address="123 Main St",
                     city="Springfield",
                     state="IL",
@@ -62,7 +62,7 @@ def test_load_by_id_returns_correct_customer(service: CustomerService) -> None:
     c = service.load_customer(1)
     assert c is not None
     assert c.id == 1
-    assert c.name == "Customer 130"
+    assert c.name == "Customer ea6f9"
     assert c.street_address == "123 Main St"
     assert c.city == "Springfield"
     assert c.state == "IL"
@@ -102,7 +102,7 @@ def test_customer_is_frozen(service: CustomerService) -> None:
 
 
 def test_get_name_by_id_returns_name(service: CustomerService) -> None:
-    assert service.get_name_by_id(1) == "Customer 130"
+    assert service.get_name_by_id(1) == "Customer ea6f9"
 
 
 def test_get_name_by_id_raises_for_missing(service: CustomerService) -> None:
@@ -205,7 +205,7 @@ def test_create_customer_records_created_by_and_created_at(session: Session) -> 
 
 def test_create_customer_duplicate_name_raises(service: CustomerService) -> None:
     with pytest.raises(ValueError, match="already exists"):
-        service.create_customer("Customer 130", "1 Other St", "Elsewhere", "CA", "90210", "USA")
+        service.create_customer("Customer ea6f9", "1 Other St", "Elsewhere", "CA", "90210", "USA")
 
 
 def test_repo_insert_race_is_caught_at_the_db_level(session: Session) -> None:
@@ -269,7 +269,7 @@ def test_update_customer_cache_reflects_rename(service: CustomerService) -> None
     service.update_customer(updated)
 
     assert service.get_by_name("Acme Corporation") is not None
-    assert service.get_by_name("Customer 130") is None
+    assert service.get_by_name("Customer ea6f9") is None
 
 
 def test_update_customer_same_name_allowed(service: CustomerService) -> None:
@@ -321,7 +321,7 @@ def test_update_customer_blank_field_raises(service: CustomerService) -> None:
 def test_delete_customer_removes_from_cache(service: CustomerService) -> None:
     service.delete_customer(1)
     assert service.load_customer(1) is None
-    assert service.get_by_name("Customer 130") is None
+    assert service.get_by_name("Customer ea6f9") is None
 
 
 def test_delete_customer_removes_from_db(session: Session) -> None:

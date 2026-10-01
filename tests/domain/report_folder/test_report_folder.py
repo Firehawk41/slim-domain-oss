@@ -22,7 +22,7 @@ def session(tmp_path: Path) -> Session:
             [
                 _CustomerRow(
                     id=1,
-                    customer_name="Customer 130",
+                    customer_name="Customer ea6f9",
                     street_address="123 Main St",
                     city="Springfield",
                     state="IL",
@@ -51,17 +51,17 @@ def service(session: Session) -> ReportFolderService:
 
 def test_resolve_folder_raises_when_unmapped(service: ReportFolderService) -> None:
     with pytest.raises(UnresolvedReportFolderError):
-        service.resolve_folder(1, "Customer 130")
+        service.resolve_folder(1, "Customer ea6f9")
 
 
 def test_resolve_folder_returns_mapped_real_directory(
     service: ReportFolderService, tmp_path: Path
 ) -> None:
-    real_dir = tmp_path / "Customer 130"
+    real_dir = tmp_path / "Customer ea6f9"
     real_dir.mkdir()
     service.set_folder(1, str(real_dir), created_by="JT")
 
-    assert service.resolve_folder(1, "Customer 130") == real_dir
+    assert service.resolve_folder(1, "Customer ea6f9") == real_dir
 
 
 def test_resolve_folder_raises_when_mapped_dir_no_longer_exists(
@@ -73,7 +73,7 @@ def test_resolve_folder_raises_when_mapped_dir_no_longer_exists(
     real_dir.rmdir()  # simulate the folder being renamed/moved on the share
 
     with pytest.raises(UnresolvedReportFolderError):
-        service.resolve_folder(1, "Customer 130")
+        service.resolve_folder(1, "Customer ea6f9")
 
 
 def test_set_folder_rejects_nonexistent_path(service: ReportFolderService, tmp_path: Path) -> None:
@@ -107,12 +107,12 @@ def test_set_folder_rejects_relative_path(service: ReportFolderService, tmp_path
 
 
 def test_set_folder_persists_to_db(session: Session, tmp_path: Path) -> None:
-    real_dir = tmp_path / "Customer 130"
+    real_dir = tmp_path / "Customer ea6f9"
     real_dir.mkdir()
     ReportFolderService(session).set_folder(1, str(real_dir), created_by="JT")
 
     fresh = ReportFolderService(session)
-    assert fresh.resolve_folder(1, "Customer 130") == real_dir
+    assert fresh.resolve_folder(1, "Customer ea6f9") == real_dir
 
 
 def test_mapping_is_independent_per_customer(service: ReportFolderService, tmp_path: Path) -> None:
@@ -123,7 +123,7 @@ def test_mapping_is_independent_per_customer(service: ReportFolderService, tmp_p
     service.set_folder(1, str(acme_dir), created_by="JT")
     service.set_folder(2, str(beta_dir), created_by="JT")
 
-    assert service.resolve_folder(1, "Customer 130") == acme_dir
+    assert service.resolve_folder(1, "Customer ea6f9") == acme_dir
     assert service.resolve_folder(2, "Beta Labs") == beta_dir
 
 
@@ -147,7 +147,7 @@ def test_set_folder_is_idempotent_while_existing_mapping_is_still_valid(
     service.set_folder(1, str(old_dir), created_by="JT")
     service.set_folder(1, str(new_dir), created_by="ZZ")
 
-    assert service.resolve_folder(1, "Customer 130") == old_dir
+    assert service.resolve_folder(1, "Customer ea6f9") == old_dir
 
 
 def test_set_folder_still_overwrites_when_existing_mapping_is_no_longer_valid(
@@ -168,7 +168,7 @@ def test_set_folder_still_overwrites_when_existing_mapping_is_no_longer_valid(
 
     service.set_folder(1, str(new_dir), created_by="AB")
 
-    assert service.resolve_folder(1, "Customer 130") == new_dir
+    assert service.resolve_folder(1, "Customer ea6f9") == new_dir
 
 
 def test_report_folder_row_table_name() -> None:
@@ -213,12 +213,12 @@ def test_unresolved_report_folder_error_carries_location() -> None:
 
 
 def test_unresolved_report_folder_error_default_location_is_blank() -> None:
-    e = UnresolvedReportFolderError(1, "Customer 130")
+    e = UnresolvedReportFolderError(1, "Customer ea6f9")
     assert e.location == ""
 
 
 def test_unresolved_report_folder_error_default_reason_is_blank() -> None:
-    e = UnresolvedReportFolderError(1, "Customer 130")
+    e = UnresolvedReportFolderError(1, "Customer ea6f9")
     assert e.reason == ""
 
 
@@ -234,7 +234,7 @@ def test_unresolved_report_folder_error_default_reason_is_blank() -> None:
 def test_resolve_folder_raises_with_reason_when_mapped_dir_is_unreachable(
     service: ReportFolderService, tmp_path: Path, monkeypatch
 ) -> None:
-    real_dir = tmp_path / "Customer 130"
+    real_dir = tmp_path / "Customer ea6f9"
     real_dir.mkdir()
     service.set_folder(1, str(real_dir), created_by="JT")
 
@@ -244,7 +244,7 @@ def test_resolve_folder_raises_with_reason_when_mapped_dir_is_unreachable(
     monkeypatch.setattr(Path, "is_dir", flaky_is_dir)
 
     with pytest.raises(UnresolvedReportFolderError) as exc_info:
-        service.resolve_folder(1, "Customer 130")
+        service.resolve_folder(1, "Customer ea6f9")
     assert "could not be reached" in exc_info.value.reason
     assert "network drive may be offline" in exc_info.value.reason
 
@@ -252,7 +252,7 @@ def test_resolve_folder_raises_with_reason_when_mapped_dir_is_unreachable(
 def test_set_folder_raises_a_reachability_specific_value_error_when_unreachable(
     service: ReportFolderService, tmp_path: Path, monkeypatch
 ) -> None:
-    real_dir = tmp_path / "Customer 130"
+    real_dir = tmp_path / "Customer ea6f9"
     real_dir.mkdir()
 
     def flaky_is_dir(self):
@@ -265,14 +265,14 @@ def test_set_folder_raises_a_reachability_specific_value_error_when_unreachable(
 
 
 def test_set_folder_rejects_blank_initials(service: ReportFolderService, tmp_path: Path) -> None:
-    real_dir = tmp_path / "Customer 130"
+    real_dir = tmp_path / "Customer ea6f9"
     real_dir.mkdir()
     with pytest.raises(ValueError, match="Initials cannot be blank"):
         service.set_folder(1, str(real_dir), created_by="   ")
 
 
 def test_set_folder_records_created_by_and_created_at(session: Session, tmp_path: Path) -> None:
-    real_dir = tmp_path / "Customer 130"
+    real_dir = tmp_path / "Customer ea6f9"
     real_dir.mkdir()
     ReportFolderService(session).set_folder(1, str(real_dir), created_by="JT")
 
@@ -318,9 +318,9 @@ def test_test_root_auto_creates_and_accepts_nested_folder(session: Session, tmp_
     test_root = tmp_path / "sandbox"
     svc = ReportFolderService(session, test_root=test_root)
 
-    result = svc.set_folder(1, str(test_root / "Customer 130"), created_by="JT")
+    result = svc.set_folder(1, str(test_root / "Customer ea6f9"), created_by="JT")
 
-    assert result == test_root / "Customer 130"
+    assert result == test_root / "Customer ea6f9"
     assert result.is_dir()  # auto-created, even though it didn't exist yet
 
 
@@ -374,7 +374,7 @@ def test_no_test_root_means_unrestricted_as_before(service: ReportFolderService,
 def test_production_root_accepts_a_real_nested_folder(session: Session, tmp_path: Path) -> None:
     prod_root = tmp_path / "Reports"
     prod_root.mkdir()
-    customer_dir = prod_root / "Customer 130"
+    customer_dir = prod_root / "Customer ea6f9"
     customer_dir.mkdir()
     svc = ReportFolderService(session, production_root=prod_root)
 
@@ -423,5 +423,5 @@ def test_test_root_takes_precedence_over_production_root(session: Session, tmp_p
     svc = ReportFolderService(session, test_root=test_root, production_root=prod_root)
 
     # Accepted under the test root even though it's outside production_root.
-    result = svc.set_folder(1, str(test_root / "Customer 130"), created_by="JT")
-    assert result == test_root / "Customer 130"
+    result = svc.set_folder(1, str(test_root / "Customer ea6f9"), created_by="JT")
+    assert result == test_root / "Customer ea6f9"

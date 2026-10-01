@@ -25,7 +25,7 @@ class _CustomerRow(Base):
     # friendly "already exists" message as the ordinary (non-race) case.
     #
     # CITEXT on Postgres (2026-09-23): confirmed real via a direct test that
-    # the plain-String UNIQUE constraint let "Customer 138" and "Customer 138" coexist
+    # the plain-String UNIQUE constraint let "Customer d17a1" and "Customer d17a1" coexist
     # as two separate rows -- a human reads those as the same customer, and
     # the in-memory cache's own lookup already treats them the same (see
     # CustomerCache._norm), so the DB-level race-condition safety net should

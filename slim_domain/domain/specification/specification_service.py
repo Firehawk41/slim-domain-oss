@@ -77,7 +77,7 @@ class SpecificationService:
         preamble reads "All data in units of ppb unless otherwise noted"
         by default, and the legacy macro replaces "ppb" with this real
         unit when the spec on file isn't ppb -- confirmed against a real
-        completed report (Customer 047 / PG, unit "ppm" on file,
+        completed report (Customer a359c / PG, unit "ppm" on file,
         real report reads "...units of ppm unless otherwise noted").
 
         "(ppb)" is treated as equivalent to "ppb" (case/whitespace/paren
@@ -85,7 +85,7 @@ class SpecificationService:
         several (customer, chemical) rows have "(ppb)" verbatim on file
         (a data-entry inconsistency in the source spec database, not a
         real different unit), but a real completed report for one of
-        them (Customer 168 / 1% NH4OH) shows the plain, unsubstituted "ppb"
+        them (Customer 98168 / 1% NH4OH) shows the plain, unsubstituted "ppb"
         wording -- so treating "(ppb)" as ppb-equivalent matches real
         evidence, not just a guess at cleaning up messy source data.
         """

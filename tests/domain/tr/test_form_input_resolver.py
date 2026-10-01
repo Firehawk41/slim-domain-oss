@@ -23,7 +23,7 @@ def session() -> Session:
             [
                 _CustomerRow(
                     id=1,
-                    customer_name="Customer 130",
+                    customer_name="Customer ea6f9",
                     street_address="123 Main St",
                     city="Springfield",
                     state="IL",
@@ -31,7 +31,7 @@ def session() -> Session:
                     country="USA",
                 ),
                 _FormCustomerRow(
-                    form_customer="Customer 130",
+                    form_customer="Customer ea6f9",
                     form_address="123 main st",
                     form_address_2="",
                     customer_id=1,
@@ -61,13 +61,13 @@ def resolver(session: Session) -> TRFormInputResolver:
 
 
 def test_resolve_customer_returns_customer_on_hit(resolver: TRFormInputResolver) -> None:
-    c = resolver.resolve_customer("Customer 130", "123 main st", "")
+    c = resolver.resolve_customer("Customer ea6f9", "123 main st", "")
     assert c.id == 1
-    assert c.name == "Customer 130"
+    assert c.name == "Customer ea6f9"
 
 
 def test_resolve_customer_case_insensitive(resolver: TRFormInputResolver) -> None:
-    c = resolver.resolve_customer("Customer 130", "123 Main St", "")
+    c = resolver.resolve_customer("Customer ea6f9", "123 Main St", "")
     assert c.id == 1
 
 

@@ -70,7 +70,7 @@ def _make_submission(**kwargs) -> TRSubmission:
         file_name="Lab Results [2026-01-20].xlsx",
         service_date=date(2026, 1, 20),
         download_date=datetime(2026, 1, 16, 9, 0),
-        form_customer_name="Customer 130",
+        form_customer_name="Customer ea6f9",
         form_customer_address="123 Main St",
         form_customer_address_2="",
     )

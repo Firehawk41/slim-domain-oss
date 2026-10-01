@@ -15,32 +15,32 @@ def session() -> Session:
         s.add_all(
             [
                 _SpecificationRow(
-                    id=1, kind="specification", customer_id=30, customer_name_raw="Customer 174",
+                    id=1, kind="specification", customer_id=30, customer_name_raw="Customer 3fbc3",
                     chemical_id=129, chemical_name_raw="49%HF", element_symbol="Fe",
                     value=0.5, unit="ppb", category_label="Trace Metals", parameter_text="Fe",
                 ),
                 _SpecificationRow(
-                    id=2, kind="specification", customer_id=30, customer_name_raw="Customer 174",
+                    id=2, kind="specification", customer_id=30, customer_name_raw="Customer 3fbc3",
                     chemical_id=129, chemical_name_raw="49%HF", element_symbol="Ca",
                     value=1.0, unit="ppb", category_label="Trace Metals", parameter_text="Ca",
                 ),
                 _SpecificationRow(
-                    id=3, kind="warning_limit", customer_id=30, customer_name_raw="Customer 174",
+                    id=3, kind="warning_limit", customer_id=30, customer_name_raw="Customer 3fbc3",
                     chemical_id=129, chemical_name_raw="49%HF", element_symbol="Fe",
                     value=0.4, unit="ppb", category_label="Trace Metals", parameter_text="Fe",
                 ),
                 _SpecificationRow(
-                    id=4, kind="specification", customer_id=None, customer_name_raw="Customer 173",
+                    id=4, kind="specification", customer_id=None, customer_name_raw="Customer a2519",
                     chemical_id=None, chemical_name_raw="SurfClean", element_symbol="Na",
                     value=2.0, unit="ppb", category_label="Trace Metals", parameter_text="Na",
                 ),
                 _SpecificationRow(
-                    id=5, kind="specification", customer_id=88, customer_name_raw="Customer 047",
+                    id=5, kind="specification", customer_id=88, customer_name_raw="Customer a359c",
                     chemical_id=201, chemical_name_raw="PG", element_symbol="Al",
                     value=1.0, unit="ppm", category_label="Trace Metals", parameter_text="Al",
                 ),
                 _SpecificationRow(
-                    id=6, kind="specification", customer_id=91, customer_name_raw="Customer 168",
+                    id=6, kind="specification", customer_id=91, customer_name_raw="Customer 98168",
                     chemical_id=202, chemical_name_raw="1% NH4OH", element_symbol="Fe",
                     value=0.5, unit="(ppb)", category_label="Trace Metals", parameter_text="Fe",
                 ),
@@ -69,11 +69,11 @@ def test_get_warning_limits_returns_warning_limit_kind_only(service: Specificati
 
 
 def test_get_specs_by_raw_names_reaches_unresolved_rows(service: SpecificationService) -> None:
-    assert service.get_specs_by_raw_names("Customer 173", "SurfClean") == {"Na": 2.0}
+    assert service.get_specs_by_raw_names("Customer a2519", "SurfClean") == {"Na": 2.0}
 
 
 def test_get_specs_by_raw_names_is_case_and_whitespace_insensitive(service: SpecificationService) -> None:
-    assert service.get_specs_by_raw_names("  Customer 173  ", "surfclean") == {"Na": 2.0}
+    assert service.get_specs_by_raw_names("  Customer a2519  ", "surfclean") == {"Na": 2.0}
 
 
 def test_get_unit_override_returns_none_for_plain_ppb(service: SpecificationService) -> None:
@@ -85,7 +85,7 @@ def test_get_unit_override_returns_none_when_no_spec_on_file(service: Specificat
 
 
 def test_get_unit_override_returns_the_real_unit_when_not_ppb(service: SpecificationService) -> None:
-    """Confirmed real (direct DB check, 2026-09-28): Customer 047's
+    """Confirmed real (direct DB check, 2026-09-28): Customer a359c's
     PG spec is on file in ppm, and a real completed report shows "All
     data in units of ppm unless otherwise noted" in place of the default
     ppb wording."""
@@ -95,7 +95,7 @@ def test_get_unit_override_returns_the_real_unit_when_not_ppb(service: Specifica
 def test_get_unit_override_treats_parenthesized_ppb_as_ppb_equivalent(service: SpecificationService) -> None:
     """Confirmed real (direct evidence check, 2026-09-28): several real
     spec rows have "(ppb)" verbatim on file (a data-entry inconsistency,
-    not a genuinely different unit) -- a real completed Customer 168 report for
+    not a genuinely different unit) -- a real completed Customer 98168 report for
     one of them shows the plain, unsubstituted "ppb" wording, not "(ppb)"."""
     assert service.get_unit_override(91, 202) is None
 

@@ -17,7 +17,7 @@ class SpecificationCache:
         # Specifications_Database specifically, never Warning_Limits_Database).
         # Confirmed real, direct DB check (2026-09-28): exactly one real
         # (customer, chemical) combo currently has a genuinely different
-        # unit on file -- Customer 047 / PG, "ppm" -- confirmed
+        # unit on file -- Customer a359c / PG, "ppm" -- confirmed
         # against real completed reports showing "All data in units of
         # ppm unless otherwise noted" in place of the default ppb wording.
         self._unit_by_customer_chemical: dict[tuple[int, int], str] = {}

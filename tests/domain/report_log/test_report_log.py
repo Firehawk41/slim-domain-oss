@@ -22,13 +22,13 @@ def test_record_generation_inserts_a_row(session: Session):
     svc.record_generation(
         input_path=r"S:\Testing_Requests\Acme\010126-Acme Water STD.xlsx",
         output_path=r"S:\Testing_Requests\Acme\010126-Acme Water STD_report.xlsx",
-        customer_name="Customer 130",
+        customer_name="Customer ea6f9",
         request_type="WATER",
         technician_initials="JT",
     )
     rows = session.query(_ReportGenerationLogRow).all()
     assert len(rows) == 1
-    assert rows[0].customer_name == "Customer 130"
+    assert rows[0].customer_name == "Customer ea6f9"
     assert rows[0].technician_initials == "JT"
     assert isinstance(rows[0].generated_at, datetime)
 
@@ -42,7 +42,7 @@ def test_regenerating_the_same_submission_appends_a_second_row(session: Session)
         svc.record_generation(
             input_path=r"S:\Testing_Requests\Acme\010126-Acme Water STD.xlsx",
             output_path=r"S:\Testing_Requests\Acme\010126-Acme Water STD_report.xlsx",
-            customer_name="Customer 130",
+            customer_name="Customer ea6f9",
             request_type="WATER",
             technician_initials="JT",
         )
@@ -53,7 +53,7 @@ def test_regenerating_the_same_submission_appends_a_second_row(session: Session)
 def test_blank_initials_stored_as_none_not_empty_string(session: Session):
     svc = ReportGenerationLogService(session)
     svc.record_generation(
-        input_path="x.xlsx", output_path="y.xlsx", customer_name="Customer 130",
+        input_path="x.xlsx", output_path="y.xlsx", customer_name="Customer ea6f9",
         request_type="CHEMICAL", technician_initials="",
     )
     row = session.query(_ReportGenerationLogRow).one()
