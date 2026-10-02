@@ -276,7 +276,7 @@ def test_set_folder_records_created_by_and_created_at(session: Session, tmp_path
     real_dir.mkdir()
     ReportFolderService(session).set_folder(1, str(real_dir), created_by="JT")
 
-    row = session.get(_CustomerReportFolderRow, (1, ""))
+    row = session.get(_CustomerReportFolderRow, (1, "", "production"))
     assert row is not None
     assert row.created_by == "JT"
     assert row.created_at is not None
@@ -291,7 +291,7 @@ def test_set_folder_noop_does_not_touch_created_by(session: Session, tmp_path: P
     svc.set_folder(1, str(old_dir), created_by="JT")
     svc.set_folder(1, str(new_dir), created_by="AB")  # stale/late submission -- no-op
 
-    row = session.get(_CustomerReportFolderRow, (1, ""))
+    row = session.get(_CustomerReportFolderRow, (1, "", "production"))
     assert row is not None
     assert row.created_by == "JT"
 
@@ -306,7 +306,7 @@ def test_set_folder_remap_updates_created_by(session: Session, tmp_path: Path) -
     new_dir.mkdir()
     svc.set_folder(1, str(new_dir), created_by="AB")
 
-    row = session.get(_CustomerReportFolderRow, (1, ""))
+    row = session.get(_CustomerReportFolderRow, (1, "", "production"))
     assert row is not None
     assert row.created_by == "AB"
 
@@ -425,3 +425,57 @@ def test_test_root_takes_precedence_over_production_root(session: Session, tmp_p
     # Accepted under the test root even though it's outside production_root.
     result = svc.set_folder(1, str(test_root / "Customer ea6f9"), created_by="JT")
     assert result == test_root / "Customer ea6f9"
+
+
+# --- The wall between test and production mode ---
+# Confirmed real gap (2026-10-01 end-to-end run): roots were only checked
+# when a mapping was saved, so a report followed an old test-mode mapping
+# to C:\SlimLimsTestOutput, and turning test mode off would have sent real
+# reports into test folders.
+
+
+def test_production_mode_ignores_a_test_mode_mapping(session: Session, tmp_path: Path) -> None:
+    test_root = tmp_path / "sandbox"
+    prod_root = tmp_path / "Reports"
+    prod_root.mkdir()
+    ReportFolderService(session, test_root=test_root).set_folder(1, str(test_root / "Customer ea6f9"), created_by="JT")
+
+    prod = ReportFolderService(session, test_root=None, production_root=prod_root)
+    with pytest.raises(UnresolvedReportFolderError):
+        prod.resolve_folder(1, "Customer ea6f9")
+
+
+def test_test_mode_ignores_a_production_mapping(session: Session, tmp_path: Path) -> None:
+    test_root = tmp_path / "sandbox"
+    prod_root = tmp_path / "Reports"
+    (prod_root / "Customer ea6f9").mkdir(parents=True)
+    ReportFolderService(session, production_root=prod_root).set_folder(1, str(prod_root / "Customer ea6f9"), created_by="JT")
+
+    test = ReportFolderService(session, test_root=test_root, production_root=prod_root)
+    with pytest.raises(UnresolvedReportFolderError):
+        test.resolve_folder(1, "Customer ea6f9")
+
+
+def test_test_mode_ignores_a_mapping_under_an_old_test_root(session: Session, tmp_path: Path) -> None:
+    old_root, new_root = tmp_path / "old_sandbox", tmp_path / "new_sandbox"
+    ReportFolderService(session, test_root=old_root).set_folder(1, str(old_root / "Customer ea6f9"), created_by="JT")
+
+    with pytest.raises(UnresolvedReportFolderError):
+        ReportFolderService(session, test_root=new_root).resolve_folder(1, "Customer ea6f9")
+
+
+def test_test_and_production_mappings_coexist(session: Session, tmp_path: Path) -> None:
+    """Setting one mode's folder never overwrites the other's -- switching
+    modes back and forth needs no re-resolving."""
+    test_root = tmp_path / "sandbox"
+    prod_root = tmp_path / "Reports"
+    (prod_root / "Customer ea6f9").mkdir(parents=True)
+    ReportFolderService(session, test_root=test_root).set_folder(1, str(test_root / "Customer ea6f9"), created_by="JT")
+
+    prod = ReportFolderService(session, production_root=prod_root)
+    assert prod.set_folder(1, str(prod_root / "Customer ea6f9"), created_by="JT") == prod_root / "Customer ea6f9"
+    assert prod.resolve_folder(1, "Customer ea6f9") == prod_root / "Customer ea6f9"
+
+    test = ReportFolderService(session, test_root=test_root, production_root=prod_root)
+    assert test.resolve_folder(1, "Customer ea6f9") == test_root / "Customer ea6f9"
+    assert session.query(_CustomerReportFolderRow).count() == 2

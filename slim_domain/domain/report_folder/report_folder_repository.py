@@ -19,6 +19,11 @@ class _CustomerReportFolderRow(Base):
     # composite PKs can't contain it) means "no location", i.e. every
     # other customer, unchanged from before this column existed.
     location: Mapped[str] = mapped_column(String, primary_key=True, default="")
+    # Part of the primary key so test and production mappings never share
+    # a row: "test" rows are used only while test mode is on, "production"
+    # rows only when it's off. Switching modes never overwrites the other
+    # mode's folders. See ReportFolderService.mode.
+    mode: Mapped[str] = mapped_column(String, primary_key=True, default="production")
     folder_path: Mapped[str] = mapped_column(String)
     # ISO 17025 audit trail -- who set the CURRENT mapping, and when.
     # Updated on every upsert (not just the first), since knowing who's
@@ -39,20 +44,24 @@ class ReportFolderRepository:
         confirmed-real reasoning, same fallback behavior."""
         return make_session(self._engine) if self._engine is not None else self._session
 
-    def select_all(self) -> list[tuple[int, str, str]]:
-        """Load all (customer_id, location) -> folder_path mappings. Called only by ReportFolderCache."""
-        rows = self._session.query(_CustomerReportFolderRow).all()
+    def select_all(self, mode: str = "production") -> list[tuple[int, str, str]]:
+        """Load all (customer_id, location) -> folder_path mappings for one
+        mode. Called only by ReportFolderCache."""
+        rows = self._session.query(_CustomerReportFolderRow).filter_by(mode=mode).all()
         return [(r.customer_id, r.location, r.folder_path) for r in rows]
 
-    def upsert(self, customer_id: int, folder_path: str, created_by: str | None = None, location: str = "") -> None:
-        """Insert or overwrite the folder mapping for (customer_id, location)."""
+    def upsert(
+        self, customer_id: int, folder_path: str, created_by: str | None = None, location: str = "",
+        mode: str = "production",
+    ) -> None:
+        """Insert or overwrite the folder mapping for (customer_id, location, mode)."""
         session = self._write_session()
         try:
-            row = session.get(_CustomerReportFolderRow, (customer_id, location))
+            row = session.get(_CustomerReportFolderRow, (customer_id, location, mode))
             if row is None:
                 session.add(
                     _CustomerReportFolderRow(
-                        customer_id=customer_id, location=location, folder_path=folder_path,
+                        customer_id=customer_id, location=location, mode=mode, folder_path=folder_path,
                         created_by=created_by, created_at=datetime.now(),
                     )
                 )

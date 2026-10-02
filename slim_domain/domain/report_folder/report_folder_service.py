@@ -47,7 +47,6 @@ class ReportFolderService:
         engine: Engine | None = None,
     ) -> None:
         self._repo = ReportFolderRepository(session, engine=engine)
-        self._cache = ReportFolderCache(self._repo)
         # When set (REPORT_FOLDER_TEST_ROOT in .env -- see build_services()
         # in slim_report_engine.cli), every folder this service will
         # accept is confined under this directory, and it's auto-created
@@ -68,6 +67,22 @@ class ReportFolderService:
         # e.g. some tests) -- build_services() always supplies a real
         # default in practice.
         self.production_root: Path | None = Path(production_root).resolve() if production_root else None
+        # Test and production mappings are stored as separate rows and this
+        # service only ever loads its own mode's -- the wall between the two.
+        self.mode = "test" if self.test_root is not None else "production"
+        self._cache = ReportFolderCache(self._repo, self.mode)
+
+    def _in_active_root(self, folder_path: str) -> bool:
+        """True if folder_path is under the root for the current mode: the
+        test root while test mode is on, otherwise the production root
+        (None means unrestricted, as in set_folder). Stored paths are
+        already resolved, so this is a plain path comparison -- no disk
+        or network access."""
+        root = self.test_root if self.test_root is not None else self.production_root
+        if root is None:
+            return True
+        path = Path(folder_path)
+        return path == root or root in path.parents
 
     def resolve_folder(self, customer_id: int, customer_name: str, location: str = "") -> Path:
         """Return the mapped, currently-real report folder for
@@ -75,7 +90,9 @@ class ReportFolderService:
         SX5 (see class docstring's module -- North/South comes from the
         TR filename, not the customer record).
 
-        Raises UnresolvedReportFolderError if there's no mapping yet, or if
+        Raises UnresolvedReportFolderError if there's no mapping yet, if
+        the mapping is outside the current mode's root (see
+        _in_active_root), or if
         the mapped folder no longer exists -- a stale/renamed mapping fails
         loudly here rather than silently writing into a phantom path.
         Also raises it (with `reason` set, distinguishing this from the
@@ -90,6 +107,12 @@ class ReportFolderService:
         found," 64 "network name no longer available"), so those used to
         propagate as a raw, unhandled OSError instead of this class."""
         mapped = self._cache.get(customer_id, location)
+        if mapped is not None and not self._in_active_root(mapped):
+            # Second layer of the wall (the first is the per-mode rows): a
+            # mapping outside this mode's root -- e.g. one saved under an
+            # old test root -- is never used; the customer is unresolved
+            # again and a technician picks the folder once.
+            mapped = None
         if mapped is not None:
             try:
                 reachable = Path(mapped).is_dir()
@@ -141,7 +164,7 @@ class ReportFolderService:
         missing or no longer a real directory -- the exact same condition
         this guard checks for."""
         existing = self._cache.get(customer_id, location)
-        if existing is not None and Path(existing).is_dir():
+        if existing is not None and self._in_active_root(existing) and Path(existing).is_dir():
             return Path(existing)
 
         if not created_by.strip():
@@ -186,6 +209,6 @@ class ReportFolderService:
             if not reachable:
                 raise ValueError(f"Not a real, accessible folder: {folder_path}")
 
-        self._repo.upsert(customer_id, str(path), created_by=created_by, location=location)
+        self._repo.upsert(customer_id, str(path), created_by=created_by, location=location, mode=self.mode)
         self._cache.set(customer_id, str(path), location=location)
         return path

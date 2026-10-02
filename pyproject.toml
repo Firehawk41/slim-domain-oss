@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "slim-domain"
-version = "0.12.0"
+version = "0.13.0"
 description = "Shared domain layer (Analysis/Chemical/Customer/Element + TR submission parsing) for the SLIM family of lab-operations tools."
 requires-python = ">=3.11"
 dependencies = [

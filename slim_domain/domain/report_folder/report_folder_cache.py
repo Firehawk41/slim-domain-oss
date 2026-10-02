@@ -2,12 +2,17 @@ from slim_domain.domain.report_folder.report_folder_repository import ReportFold
 
 
 class ReportFolderCache:
-    def __init__(self, repo: ReportFolderRepository) -> None:
-        self._by_key: dict[tuple[int, str], str] = {}
-        self._build(repo)
+    """Mappings for ONE mode (test or production) -- the other mode's rows
+    are never loaded, so they can't be returned."""
 
-    def _build(self, repo: ReportFolderRepository) -> None:
-        self._by_key = {(customer_id, location): folder_path for customer_id, location, folder_path in repo.select_all()}
+    def __init__(self, repo: ReportFolderRepository, mode: str = "production") -> None:
+        self._by_key: dict[tuple[int, str], str] = {}
+        self._build(repo, mode)
+
+    def _build(self, repo: ReportFolderRepository, mode: str) -> None:
+        self._by_key = {
+            (customer_id, location): folder_path for customer_id, location, folder_path in repo.select_all(mode)
+        }
 
     # --- Incremental updates ---
 
