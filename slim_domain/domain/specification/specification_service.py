@@ -1,3 +1,5 @@
+import math
+
 from sqlalchemy.orm import Session
 
 from slim_domain.domain.specification.specification import ChemicalReportSetting
@@ -12,9 +14,11 @@ class SpecificationService:
     caller treats {} the same as a dict missing that one symbol.
     """
 
+    KINDS = ("specification", "warning_limit")
+
     def __init__(self, session: Session) -> None:
-        repo = SpecificationRepository(session)
-        self._cache = SpecificationCache(repo)
+        self._repo = SpecificationRepository(session)
+        self._cache = SpecificationCache(self._repo)
 
     def get_specs(self, customer_id: int, chemical_id: int, location: str = "") -> dict[str, float]:
         """element_symbol -> real customer spec limit for (customer_id,
@@ -96,3 +100,46 @@ class SpecificationService:
         if normalized == "ppb" or not normalized:
             return None
         return unit
+
+    # --- Writes ---
+
+    def set_limits(
+        self,
+        customer_id: int,
+        chemical_id: int,
+        location: str,
+        kind: str,
+        limits: dict[str, float],
+        unit: str,
+        customer_name: str,
+        chemical_name: str,
+        category_label: str = "Trace Metals",
+    ) -> dict[str, float]:
+        """Replace one limit set -- (customer, chemical, location, kind) -- with `limits`
+        (element_symbol -> upper limit); {} removes it. Validates, writes in one transaction, and
+        refreshes the cache. Who changed it and why is the caller's record (the host keeps it, and on
+        Postgres the audit log records the rows). Returns the set as now on file."""
+        if kind not in self.KINDS:
+            raise ValueError(f"Kind must be one of {', '.join(self.KINDS)}")
+        if customer_id <= 0 or chemical_id <= 0:
+            raise ValueError("A limit set needs a customer and a chemical")
+        location = (location or "").strip()
+        unit = (unit or "").strip()
+        if limits and not unit:
+            raise ValueError("Unit cannot be blank")
+        clean: dict[str, float] = {}
+        for symbol, value in limits.items():
+            symbol = (symbol or "").strip()
+            if not symbol or len(symbol) > 5:
+                raise ValueError(f"Not an element symbol: {symbol!r}")
+            if symbol in clean:
+                raise ValueError(f"{symbol} appears twice")
+            number = float(value)
+            if not math.isfinite(number) or number <= 0:
+                raise ValueError(f"{symbol}: a limit must be a positive number")
+            clean[symbol] = number
+        self._repo.replace_set(
+            customer_id, chemical_id, location, kind, clean, unit, category_label, customer_name, chemical_name
+        )
+        self._cache = SpecificationCache(self._repo)
+        return self._cache.get_by_customer_chemical(customer_id, chemical_id, kind, location)

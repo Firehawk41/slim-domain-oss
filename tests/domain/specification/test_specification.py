@@ -168,3 +168,39 @@ def test_limits_owner_falls_back_to_the_group_per_chemical(service: Specificatio
     # customer 77 has no limits for chemical 129 -> its group's apply
     assert service.limits_owner(77, 129, parent_customer_id=30) == 30
     assert service.limits_owner(77, 129, parent_customer_id=None) == 77
+
+
+# --- Writes: a limit set replaced whole (slim-data D-143) ---
+
+
+def test_set_limits_replaces_one_set_and_leaves_the_others(service: SpecificationService, session: Session) -> None:
+    now = service.set_limits(30, 129, "", "specification", {"Fe": 0.3, "Zn": 2.0}, "ppb", "Customer 3fbc3", "49%HF")
+    assert now == {"Fe": 0.3, "Zn": 2.0}  # Ca removed, Fe changed, Zn added
+    assert service.get_specs(30, 129) == {"Fe": 0.3, "Zn": 2.0}
+    assert service.get_warning_limits(30, 129) == {"Fe": 0.4}  # the other kind untouched
+    assert SpecificationService(session).get_specs(30, 129) == {"Fe": 0.3, "Zn": 2.0}  # on file, not just cached
+    assert service.set_limits(30, 129, "", "specification", {}, "", "Customer 3fbc3", "49%HF") == {}
+
+
+def test_a_site_split_set_is_its_own(service: SpecificationService) -> None:
+    service.set_limits(30, 129, "SX5N", "specification", {"Fe": 0.1}, "ppb", "Customer 3fbc3", "49%HF")
+    assert service.get_specs(30, 129, "SX5N") == {"Fe": 0.1}
+    assert service.get_specs(30, 129) == {"Fe": 0.5, "Ca": 1.0}
+
+
+@pytest.mark.parametrize(
+    ("kind", "limits", "unit", "message"),
+    [
+        ("spec", {"Fe": 1.0}, "ppb", "Kind must be"),
+        ("specification", {"Fe": 0.0}, "ppb", "positive"),
+        ("specification", {"Fe": float("nan")}, "ppb", "positive"),
+        ("specification", {"": 1.0}, "ppb", "element symbol"),
+        ("specification", {"Fe": 1.0}, " ", "Unit cannot be blank"),
+    ],
+)
+def test_set_limits_refuses_what_cant_be_a_limit(
+    service: SpecificationService, kind: str, limits: dict, unit: str, message: str
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        service.set_limits(30, 129, "", kind, limits, unit, "Customer 3fbc3", "49%HF")
+    assert service.get_specs(30, 129) == {"Fe": 0.5, "Ca": 1.0}  # nothing written

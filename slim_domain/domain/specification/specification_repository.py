@@ -45,6 +45,49 @@ class SpecificationRepository:
         rows = self._session.query(_SpecificationRow).all()
         return [_to_specification(r) for r in rows]
 
+    def replace_set(
+        self,
+        customer_id: int,
+        chemical_id: int,
+        location: str,
+        kind: str,
+        limits: dict[str, float],
+        unit: str,
+        category_label: str,
+        customer_name_raw: str,
+        chemical_name_raw: str,
+    ) -> None:
+        """Replace one limit set -- every row of this (customer, chemical, location, kind) -- with
+        `limits` (element_symbol -> value), in one transaction. An empty `limits` removes the set.
+        Commits, like the other repositories' writes."""
+        try:
+            self._session.query(_SpecificationRow).filter(
+                _SpecificationRow.customer_id == customer_id,
+                _SpecificationRow.chemical_id == chemical_id,
+                _SpecificationRow.location == location,
+                _SpecificationRow.kind == kind,
+            ).delete(synchronize_session=False)
+            for element_symbol, value in sorted(limits.items()):
+                self._session.add(
+                    _SpecificationRow(
+                        kind=kind,
+                        customer_id=customer_id,
+                        customer_name_raw=customer_name_raw,
+                        chemical_id=chemical_id,
+                        chemical_name_raw=chemical_name_raw,
+                        element_symbol=element_symbol,
+                        value=value,
+                        unit=unit,
+                        category_label=category_label,
+                        parameter_text=element_symbol,
+                        location=location,
+                    )
+                )
+            self._session.commit()
+        except Exception:
+            self._session.rollback()
+            raise
+
     def select_all_report_settings(self) -> list[ChemicalReportSetting]:
         """Load every chemical_report_settings row (a handful) -- also
         called only by SpecificationCache."""
